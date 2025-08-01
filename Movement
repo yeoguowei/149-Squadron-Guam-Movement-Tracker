@@ -1,0 +1,109 @@
+// Staff Movement Tracker for 149 Squadron
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+export default function TrackerForm() {
+  const [staffList, setStaffList] = useState([
+    "CPT Tan", "LTA Lim", "3SG Wong", "ME2 Goh"
+  ]);
+  const [selectedStaff, setSelectedStaff] = useState("");
+  const [accompanyingStaff, setAccompanyingStaff] = useState([""]);
+  const [vehicleNumber, setVehicleNumber] = useState("");
+  const [currentLocation, setCurrentLocation] = useState("");
+  const [destination, setDestination] = useState("");
+  const [log, setLog] = useState([]);
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCurrentLocation(`${latitude}, ${longitude}`);
+      },
+      () => {
+        setCurrentLocation("Permission denied or unavailable");
+      }
+    );
+  }, []);
+
+  const handleAddAccompanying = () => {
+    setAccompanyingStaff([...accompanyingStaff, ""]);
+  };
+
+  const handleAccompanyingChange = (index, value) => {
+    const updated = [...accompanyingStaff];
+    updated[index] = value;
+    setAccompanyingStaff(updated);
+  };
+
+  const handleSubmit = () => {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      staff: selectedStaff,
+      accompanying: accompanyingStaff.filter(name => name),
+      vehicle: vehicleNumber,
+      from: currentLocation,
+      to: destination
+    };
+    const updatedLog = [...log, entry];
+    setLog(updatedLog);
+    localStorage.setItem("movementLog", JSON.stringify(updatedLog));
+    alert("Entry submitted successfully.");
+  };
+
+  return (
+    <div className="p-4 max-w-xl mx-auto space-y-4">
+      <Card>
+        <CardContent className="space-y-4 p-4">
+          <h2 className="text-xl font-bold">149 SQN Staff Movement Tracker</h2>
+
+          <select
+            className="w-full p-2 rounded border"
+            value={selectedStaff}
+            onChange={(e) => setSelectedStaff(e.target.value)}
+          >
+            <option value="">Select Staff Name</option>
+            {staffList.map((name, idx) => (
+              <option key={idx} value={name}>{name}</option>
+            ))}
+          </select>
+
+          <div>
+            <p className="font-semibold">Accompanying Staff:</p>
+            {accompanyingStaff.map((name, idx) => (
+              <Input
+                key={idx}
+                placeholder={`Name ${idx + 1}`}
+                className="mb-2"
+                value={name}
+                onChange={(e) => handleAccompanyingChange(idx, e.target.value)}
+              />
+            ))}
+            <Button onClick={handleAddAccompanying}>Add More</Button>
+          </div>
+
+          <Input
+            placeholder="Vehicle Number"
+            value={vehicleNumber}
+            onChange={(e) => setVehicleNumber(e.target.value)}
+          />
+
+          <Input
+            value={currentLocation}
+            readOnly
+            className="bg-gray-100"
+          />
+
+          <Input
+            placeholder="Destination"
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
+          />
+
+          <Button onClick={handleSubmit} className="w-full">Submit</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
